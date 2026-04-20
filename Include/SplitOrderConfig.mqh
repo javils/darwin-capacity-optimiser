@@ -4,7 +4,7 @@
 //| Configuration for SplitOrder library                             |
 //| https://github.com/marticastany/darwin-capacity-optimiser        |
 //+------------------------------------------------------------------+
-#property copyright "Darwinex / Tradeslide Ltd"
+#property copyright "Darwinex"
 #property version   "1.0"
 #property strict
 
