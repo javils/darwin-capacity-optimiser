@@ -1,4 +1,4 @@
-# mt5-split-order
+# Darwin Capacity Optimiser
 
 **Drop-in order splitting for MetaTrader 5 — reduce slippage at scale.**
 
@@ -185,7 +185,7 @@ void SplitConfigInit(SplitConfig &cfg);  // Initialize with defaults
 ## Repo structure
 
 ```
-mt5-split-order/
+darwin-capacity-optimiser/
 ├── Include/
 │   └── SplitOrder/
 │       ├── SplitOrder.mqh            ← The library (core)
