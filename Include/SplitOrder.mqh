@@ -630,7 +630,13 @@ void _SplitCloseTicket(ulong ticket, const SplitConfig &cfg)
    req.type_filling = _SplitDetectFillingMode(sym);
    req.comment      = "SplitOrder close";
 
-   OrderSend(req, res);
+   bool sent = OrderSend(req, res);
+   if(!sent || (res.retcode != TRADE_RETCODE_DONE && res.retcode != TRADE_RETCODE_PLACED))
+     {
+      if(cfg.verbose)
+         PrintFormat("[SplitOrder] WARNING: close failed for ticket #%I64u — sent=%s retcode=%u",
+                     ticket, (sent ? "true" : "false"), res.retcode);
+     }
   }
 
 //+------------------------------------------------------------------+
