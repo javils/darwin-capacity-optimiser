@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqx-split-installer"
+version = "0.1.0"
+description = "Installs the SplitOrder library into MetaTrader 5 and patches SQX-generated Expert Advisors to use it."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+build = ["pyinstaller>=6.0"]
+
+[project.scripts]
+sqx-split-installer = "sqx_split_installer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
