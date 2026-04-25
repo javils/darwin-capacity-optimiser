@@ -15,6 +15,7 @@ build = ["pyinstaller>=6.0"]
 
 [project.scripts]
 sqx-split-installer = "sqx_split_installer.cli:main"
+sqx-split-installer-gui = "sqx_split_installer.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
