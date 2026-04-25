@@ -34,7 +34,7 @@ def _build_parser() -> argparse.ArgumentParser:
     install.add_argument("terminal_folder", type=Path, help="Path to the MT5 terminal root (the folder that contains MQL5/).")
 
     patch = subparsers.add_parser("patch", help="Patch SQX-generated .mq5 files with SplitOrder integration.")
-    patch.add_argument("inputs", nargs="+", type=Path, help="One or more SQX-generated .mq5 files.")
+    patch.add_argument("inputs", nargs="+", type=Path, help="One or more .mq5 files or directories. Directories are expanded to their *.mq5 (non-recursive).")
     patch.add_argument("--split-count", type=int, default=3, help=f"Total positions including pos0 ({SPLIT_COUNT_MIN}-{SPLIT_COUNT_MAX}). Default: 3.")
     patch.add_argument("--delay-seconds", type=int, default=10, help=f"Seconds between child orders ({DELAY_SECONDS_MIN}-{DELAY_SECONDS_MAX}). Default: 10.")
     patch.add_argument("--output-dir", type=Path, default=None, help="Destination directory for patched files. Default: alongside each input.")
@@ -60,6 +60,38 @@ def _run_install(terminal_folder: Path) -> int:
     return 0
 
 
+def _expand_inputs(inputs: list[Path]) -> tuple[list[Path], list[tuple[Path, str]]]:
+    """Expand any directory in `inputs` to the .mq5 files it contains.
+
+    Returns (resolved_files, errors). De-duplicates while preserving order.
+    """
+    resolved: list[Path] = []
+    seen: set[Path] = set()
+    errors: list[tuple[Path, str]] = []
+
+    for path in inputs:
+        if path.is_dir():
+            files = sorted(path.glob("*.mq5"))
+            if not files:
+                errors.append((path, "directory contains no .mq5 files"))
+                continue
+            candidates = files
+        elif path.is_file():
+            candidates = [path]
+        else:
+            errors.append((path, "path does not exist"))
+            continue
+
+        for candidate in candidates:
+            key = candidate.resolve()
+            if key in seen:
+                continue
+            seen.add(key)
+            resolved.append(candidate)
+
+    return resolved, errors
+
+
 def _run_patch(
     inputs: list[Path],
     split_count: int,
@@ -67,10 +99,10 @@ def _run_patch(
     output_dir: Path | None,
     suffix: str,
 ) -> int:
+    files, failures = _expand_inputs(inputs)
     successes: list[Path] = []
-    failures: list[tuple[Path, str]] = []
 
-    for input_path in inputs:
+    for input_path in files:
         out_dir = output_dir if output_dir is not None else input_path.parent
         output_path = out_dir / f"{input_path.stem}{suffix}.mq5"
         try:

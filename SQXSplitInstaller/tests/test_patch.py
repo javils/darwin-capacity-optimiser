@@ -358,6 +358,52 @@ def test_cli_patch_split_count_out_of_range(tmp_path: Path, capsys: pytest.Captu
         main(["patch", "--split-count", "1", str(input_file)])
 
 
+def test_cli_patch_directory_input(tmp_path: Path) -> None:
+    from sqx_split_installer.cli import main
+
+    folder = tmp_path / "strategies"
+    folder.mkdir()
+    for i in range(3):
+        (folder / f"strategy{i}.mq5").write_text(BASELINE, encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    exit_code = main(["patch", "--output-dir", str(out_dir), str(folder)])
+
+    assert exit_code == 0
+    for i in range(3):
+        assert (out_dir / f"strategy{i}_split.mq5").exists()
+
+
+def test_cli_patch_empty_directory_reports_failure(tmp_path: Path) -> None:
+    from sqx_split_installer.cli import main
+
+    folder = tmp_path / "empty"
+    folder.mkdir()
+
+    exit_code = main(["patch", str(folder)])
+
+    assert exit_code == 1
+
+
+def test_cli_patch_dedupes_when_file_and_parent_folder_both_passed(tmp_path: Path) -> None:
+    from sqx_split_installer.cli import main
+
+    folder = tmp_path / "strategies"
+    folder.mkdir()
+    target = folder / "strategy.mq5"
+    target.write_text(BASELINE, encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    exit_code = main(["patch", "--output-dir", str(out_dir), str(folder), str(target)])
+
+    assert exit_code == 0
+    assert (out_dir / "strategy_split.mq5").exists()
+    # Only one output file — same file referenced twice was deduped.
+    assert len(list(out_dir.glob("*.mq5"))) == 1
+
+
 def test_cli_patch_mixed_success_and_failure(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     from sqx_split_installer.cli import main
 
