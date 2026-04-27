@@ -1,0 +1,74 @@
+name: Build SQXSplitInstaller
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to create (e.g. v0.1.0). Leave empty to skip the release step."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: SQXSplitInstaller
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: SQXSplitInstaller/pyproject.toml
+
+      - name: Install package and build dependencies
+        run: pip install ".[build]"
+
+      - name: Build GUI exe (windowed, no console)
+        run: >
+          pyinstaller
+          --onefile
+          --windowed
+          --name SQXSplitInstaller
+          --paths src
+          --add-data "../Include/SplitOrder;SplitOrder"
+          src/sqx_split_installer/gui.py
+
+      - name: Build CLI exe (console)
+        run: >
+          pyinstaller
+          --onefile
+          --console
+          --name SQXSplitInstaller-cli
+          --paths src
+          --add-data "../Include/SplitOrder;SplitOrder"
+          src/sqx_split_installer/cli.py
+
+      - name: Upload exes as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SQXSplitInstaller
+          path: |
+            SQXSplitInstaller/dist/SQXSplitInstaller.exe
+            SQXSplitInstaller/dist/SQXSplitInstaller-cli.exe
+          if-no-files-found: error
+
+      - name: Create GitHub Release (draft — needs manual review/publish)
+        if: ${{ inputs.version != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: SQXSplitInstaller ${{ inputs.version }}
+          files: |
+            SQXSplitInstaller/dist/SQXSplitInstaller.exe
+            SQXSplitInstaller/dist/SQXSplitInstaller-cli.exe
+          generate_release_notes: true
+          draft: true
